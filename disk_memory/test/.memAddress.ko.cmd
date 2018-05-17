@@ -1,0 +1,1 @@
+cmd_/home/tiany/paper/test/memAddress.ko := ld -r -m elf_x86_64 -T /usr/src/linux-headers-3.13.0-125-generic/scripts/module-common.lds --build-id  -o /home/tiany/paper/test/memAddress.ko /home/tiany/paper/test/memAddress.o /home/tiany/paper/test/memAddress.mod.o

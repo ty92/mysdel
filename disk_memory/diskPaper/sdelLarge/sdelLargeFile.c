@@ -1,9 +1,8 @@
 /*************************************************************************
-	> File Name: syscall.c
-	> Author: 
-	> Mail: 
-	> Created Time: 2017年06月15日 星期四 11时02分58秒
-	文件头和文件体都覆写一次
+	> File Name: sdelLargeFile.c
+	> Author: tiany
+	> Mail: tianye04@qq.com
+	> Description: 	文件头和文件体都覆写一次
  ************************************************************************/
 
 #include <linux/init.h>

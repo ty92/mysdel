@@ -1,1 +1,0 @@
-cmd_/home/ty/program/sdel/my_sdel_mod/del-mod3.ko := ld -r -m elf_x86_64 -T /usr/src/kernels/3.10.0-327.18.2.el7.x86_64/scripts/module-common.lds --build-id  -o /home/ty/program/sdel/my_sdel_mod/del-mod3.ko /home/ty/program/sdel/my_sdel_mod/del-mod3.o /home/ty/program/sdel/my_sdel_mod/del-mod3.mod.o

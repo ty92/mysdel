@@ -1,4 +1,9 @@
-/* 测试程序：成功
+/*************************************************************************
+        > File Name: moduleParam02.c
+        > Author: tiany
+        > Mail: tianye04@qq.com
+	> Description: 测试程序：成功
+	
   在exit_group()时，不是很容易测试进程内存区域的覆写情况，保持用户程序不退出，
   则内核模块无法覆写；程序若退出，在内核模块覆写操作后，使得内核模块线程睡眠，
   则无法在用户态使用gdb获取进程内存数据，也无法读取/proc/pid/maps内容；  
@@ -14,7 +19,9 @@
   内核模块中，判断mm_struct没有被共享，依次判断VMA区域中的地址(去除文件映射区、
   不可写区等)，若pte存在且不为空，对应的page没有被共享，则可以覆写，使用简单
   字符少量的覆写， 可以更明显的使用gdb-dump-memory测试。
- */
+	# gdb attach pid
+	# dump memory path 0x~ 0x~
+ ************************************************************************/
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>

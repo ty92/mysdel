@@ -1,8 +1,7 @@
 /*************************************************************************
-	> File Name: syscall.c
-	> Author: 
-	> Mail: 
-	> Created Time: 2017年06月15日 星期四 11时02分58秒
+	> File Name: syscallTest2.c
+	> Author: tiany
+	> Mail: tianye04@qq.com
  ************************************************************************/
 
 #include <linux/init.h>

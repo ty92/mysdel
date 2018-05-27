@@ -1,10 +1,15 @@
-/* 测试程序：失败
+/*************************************************************************
+        > File Name: moduleParam01.c
+        > Author: tiany
+        > Mail: tianye04@qq.com
+	> Description: 测试程序：失败
+
    进程用户地址空间各自独立，使用传参的方式传入进程pid，
    得到其VMA起始地址，到这都是可以得，但是在内核模块中对从pid获得
    的虚拟地址，进行覆写操作，就会报错，就是因为，写操作只是对应当
    前进程地址空间中的地址，因而，从pid获得的其他进程的地址写操作，
    会报错：BUG: unable to handle kernel paging request at 00007f5713810000
- */
+ ************************************************************************/
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>

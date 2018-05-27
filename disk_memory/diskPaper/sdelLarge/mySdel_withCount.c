@@ -1,9 +1,8 @@
 /*************************************************************************
-	> File Name: syscall.c
-	> Author: 
-	> Mail: 
-	> Created Time: 2017年06月15日 星期四 11时02分58秒
-	可以指定文件头和文件体的覆写次数
+	> File Name: mySdel_withCount.c
+	> Author: tiany
+	> Mail: tianye04@qq.com
+	> Description: 可以指定文件头和文件体的覆写次数
  ************************************************************************/
 
 #include <linux/init.h>

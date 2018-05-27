@@ -1,8 +1,7 @@
 /*************************************************************************
-	> File Name: syscall.c
-	> Author: 
-	> Mail: 
-	> Created Time: 2017年06月15日 星期四 11时02分58秒
+	> File Name: sdelSmallFile.c
+	> Author: tiany
+	> Mail: tianye04@qq.com
 	> Description: 传参useruid，对指定用户uid的删除文件操作，进行安全覆写；
 	>	插入内核模块时，为指定useruid参数，默认值为0(root，超户)，即就是
 	> 	只对root的删除文件操作进行覆写，其它用户都是常规的文件删除;
@@ -33,7 +32,7 @@
 //grep sys_call_table /boot/System.map-`uname -r` 
 void **sys_call_table = (void **)0xffffffff81801400;
 unsigned long *orig_unlinkAT = NULL;  //用来指向系统调用地址的
-int (*orig_rename)(const char *oldname, const char *newname);
+int (*orig_rename)(const char __user *oldname, const char __user *newname);
 long (*orig_brk)(unsigned long brk);
 long (*orig_open)(const char __user *filename, int flags, umode_t mode);
 unsigned long (*orig_write)(unsigned int fd, const char __user* buf, size_t count);
@@ -64,6 +63,10 @@ unsigned char write_modes[27][3] = {
 unsigned char std_array[3] = "\xff\xff\xff";
 
 
+/*
+  @filename: 要被随机字符重命名的文件名，可以是带有路径的文件路径名，
+   重命名时只会修改最后一个“/”后的文件名
+ */
 void sdel_random_filename(char *filename) {
     int i;
     unsigned char rand;
@@ -136,7 +139,7 @@ int smash_file(int dfd, const char *ufilename, struct stat klstat)
     unsigned long mmm;
 
     filesize = klstat.st_size;
-    printk(KERN_INFO "filename %s size is %ud\n",ufilename, filesize);
+    printk(KERN_INFO "filename %s size is %u\n",ufilename, filesize);
     writes = filesize / bufsize;
     lastWrites = filesize % bufsize;
 
@@ -274,7 +277,8 @@ int my_unlinkat(int dfd, const char __user *pathname, int flag)
 
     printk("unlink pathname: %s, dfd:%d\n", pathname,dfd);
     
-    /* 当dfd文件描述符不等于-100时，则dfd为要删除文件所在目录项的文件描述符，
+    /* 直接删除文件dfd等于-100，删除含有文件的目录时dfd为-100；
+       当dfd文件描述符不等于-100时，则dfd为要删除文件所在目录项的文件描述符，
      * 因而可以根据当前进程和目录项的文件描述符确定要删除文件所在目录的绝对路径；
      * 仅仅是删除文件时不需要考虑绝对路径，但是在rename和open操作时，必须知道文件
      * 的绝对路径，否则会报错，找不到文件
@@ -292,7 +296,7 @@ int my_unlinkat(int dfd, const char __user *pathname, int flag)
             return (-ENOMEM);
         else
             tempPath = (void*)mmm+2;
-        printk(KERN_INFO "userPath=%s\n", userPath);
+
         if((ret = copy_to_user(userPath, dirPath, strlen(dirPath))) != 0)
         {
             printk(KERN_ERR "copy_to_user userPath error %d\n", ret);
@@ -304,12 +308,18 @@ int my_unlinkat(int dfd, const char __user *pathname, int flag)
             return ret;
         }
         printk(KERN_INFO "#####kernel_dirpath=%s, userPath=%s\n", dirPath, userPath);
-        absolutePath = strcat(strcat(userPath, "/"), pathname);
+        
+	/* 构造位于用户地址空间，且带有文件名的绝对路径 */
+	absolutePath = strcat(strcat(userPath, "/"), pathname);
         printk(KERN_INFO "#####absolutePath=%s, newPathFileNULL=%s, pathname=%s, newfilename=%s\n", absolutePath, newPathFile, pathname, newfilename);
         printk(KERN_INFO "#####tempPath=%s\n",tempPath);
+
+	/* 构造位于用户地址空间，且带有新文件名（rename之后的新文件名）的绝对路径 */
         newPathFile = strcat(strcat(tempPath, "/"), newfilename); 
         printk(KERN_INFO "#####absolutePath=%s, newPathFileISNOTNULL=%s, pathname=%s, newfilename=%s\n", absolutePath, newPathFile, pathname, newfilename);
         ret = orig_rename(absolutePath, newPathFile);
+	if(ret != 0)
+		printk(KERN_INFO "rename error...\n");
         
         /*删除文件成功，通过open返回的文件描述符fd写文件*/
         if((fd = orig_open(newPathFile, O_RDWR | O_SYNC, 0)) < 0)
@@ -319,6 +329,10 @@ int my_unlinkat(int dfd, const char __user *pathname, int flag)
         }   
     } else {
         ret = orig_rename(pathname, newfilename);
+	if(ret != 0)
+		printk(KERN_INFO "rename error...\n");
+	printk(KERN_INFO "pathname is %s, newfilename is %s\n", pathname, newfilename);
+
         if((fd = orig_open(newfilename, O_RDWR | O_SYNC, 0)) < 0)
         {
             printk(KERN_INFO "open %s failed %d\n",newfilename, fd);
@@ -341,11 +355,11 @@ int my_unlinkat(int dfd, const char __user *pathname, int flag)
     user_lstat = (void*)mmm + 2;
     //printk(KERN_INFO "after %s\n",newfilename);
     if((ret = orig_fstat(fd, user_lstat)) < 0)
-    {    printk(KERN_ERR "lstat %s error\n", pathname);
+    {    printk(KERN_ERR "lstat fd is %d, %s error\n", fd,newfilename);
          if(orig_brk(mmm) < 0)
             return (-ENOMEM);
     } else {
-        printk(KERN_INFO "orig_lstat %s\n",pathname);
+        printk(KERN_INFO "orig_lstat %s\n",newfilename);
         if((ret = copy_from_user(&kernel_lstat, user_lstat, sizeof(struct stat))) != 0)
         {
             printk(KERN_ERR "copy_to_user error %d\n",ret);
@@ -377,12 +391,13 @@ asmlinkage long hacked_unlink(int dfd, const char __user *pathname, int flag)
 
 	if((flag & ~AT_REMOVEDIR) != 0)
         	return -EINVAL;
+        
     	if(!(flag & AT_REMOVEDIR) && useruid == euid)
     	{
         	ret = my_unlinkat(dfd, pathname, flag);
 
     	} else {
-        	printk(KERN_INFO "has AT_REMOVEDIR or mismatch useruid, %d flag %d\n",dfd, flag);
+		printk(KERN_INFO "has AT_REMOVEDIR or mismatch useruid, %d flag %d\n",dfd, flag);
         	ret = orig_unlinkat(dfd, pathname, flag);
     	}
 

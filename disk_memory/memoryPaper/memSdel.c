@@ -1,3 +1,9 @@
+/*************************************************************************
+        > File Name: memSdel.c
+        > Author: tiany
+        > Mail: tianye04@qq.com
+	> Description: 
+ ************************************************************************/
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -77,7 +83,7 @@ int make_ro(unsigned long address)
 }
 
 
-/*
+/* @address: 虚拟地址
  * 根据虚拟地址计算页表项pte，并判断判断页面是否有对应的物理内存
    该函数从CR3寄存器中读取当前进程的物理基地址，只适用于当前进程current
    获取pte，若是要求指定pid进程的pte，则使用pgd_offset(mm,vaddr)获取pgd
@@ -115,6 +121,9 @@ out:
         return 0;
 }
 
+/*
+  添加自定义逻辑的exit_group()函数；
+ **/
 asmlinkage void my_exit_group(int error_code)
 {
         struct mm_struct *mm;
